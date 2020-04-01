@@ -13,7 +13,7 @@ DAILY_STATUS_CSV_FILENAME = 'sandiego_daily_status.csv'
 CSV_FILE_DIRECTORY = './csv'
 
 county_data = pd.read_html(DAILY_STATUS_URL)[0]
-date_retrieved = pd.Timestamp.now()
+date_retrieved = pd.Timestamp.now().round('s')
 date_updated = re.findall('(?P<date>[A-Z][a-z]+\s+\d{1,2},\s+\d{4}).',county_data.iloc[0,0])[-1]
 date_updated = pd.Timestamp(datetime.strptime(date_updated,'%B %d, %Y'))
 
@@ -100,18 +100,20 @@ txt = re.sub('\n','',txt)
 
 
 date = re.findall('Data through (?P<date>\d{1,2}/\d{2}/\d{4})',txt)[0]
-data = re.findall('\s+(?P<city>[A-Za-z ]+[a-z])\*? (?P<count>\d+) (?P<percentage>[0-9.]+%)',txt)
+data = re.findall('\s+(?P<city>[A-Za-z ]+[a-z])\*?\s+(?P<count>\d+) (?P<percentage>[0-9.]+%)',txt)
 
 df = pd.DataFrame.from_records(data).transpose()
 df.columns = df.iloc[0]; df=df.iloc[1:]; df.columns.name = ''
-df.index=[pd.Timestamp(date),'Percent of Total']; df.index.name=''
+df.index=[pd.Timestamp(date).date(),'Percent of Total']; df.index.name=''
 df = df.rename(columns={'of Overall Total Incorporated City':'Incorporated', 'Total San Diego County Residents':'Total'})
 df = df.drop(['Percent of Total'])
 
-df_incorporated = df.loc[:,['Carlsbad','Chula Vista','Coronado','Del Mar','El Cajon','Encinitas','La Mesa','Lemon Grove','National City','Oceanside','Poway','San Diego','San Marcos','Santee','Solana Beach','Vista','Incorporated']]
+incorporated_columns = ['Carlsbad','Chula Vista','Coronado','Del Mar','El Cajon','Encinitas','Escondido','Imperial Beach','La Mesa','Lemon Grove','National City','Oceanside','Poway','San Diego','San Marcos','Santee','Solana Beach','Vista','Incorporated']
+df_incorporated = df.reindex(columns=incorporated_columns)
 df_incorporated = df_incorporated.rename(columns={'Incorporated':'Total'})
 
-df_unincorporated = df.loc[:,['Bonita','Fallbrook','Lakeside','Ramona','Rancho Santa Fe','Spring Valley','Unincorporated']]
+unincorporated_columns = ['Bonita','Fallbrook','Lakeside','Ramona','Rancho Santa Fe','Spring Valley','Other','Unincorporated']
+df_unincorporated = df.reindex(columns=unincorporated_columns)
 df_unincorporated = df_unincorporated.rename(columns={'Unincorporated':'Total'})
 
 df_unknown = df.loc[:,['Unknown']]
@@ -122,6 +124,9 @@ pieces = {'Incorporated':df_incorporated,'Unincorporated':df_unincorporated,'Unk
 df_final = pd.concat(pieces,axis=1)
 df_final.columns.names = ['Administration','City']
 df_final = df_final.reorder_levels(['City','Administration'],axis=1)
+
+df_final.index.name = 'Data through date'
+df_final['Date Retrieved']=date_retrieved
 
 
 
