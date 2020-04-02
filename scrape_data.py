@@ -80,10 +80,9 @@ CITY_BREAKDOWN_CSV_FILENAME = 'sandiego_data_by_city.csv'
 PDF_FILE_DIRECTORY = './pdfs'
 
 
-r = requests.get(CITY_BREAKDOWN_URL)
-
 pdffilepath = os.path.join(PDF_FILE_DIRECTORY,CITY_BREAKDOWN_PDF_FILENAME)
-  
+
+r = requests.get(CITY_BREAKDOWN_URL)
 with open(pdffilepath,'wb') as f: 
   
     # write the contents of the response (r.content) 
@@ -140,7 +139,51 @@ else:
     df_final.to_csv(citydatafilepath)
     
 
+
+
+ZIPCODE_BREAKDOWN_CSV_FILENAME = 'sandiego_data_by_zipcode.csv'
+
+ZIPCODE_BREAKDOWN_URL = 'https://www.sandiegocounty.gov/content/dam/sdc/hhsa/programs/phs/Epidemiology/COVID-19%20Summary%20of%20Cases%20by%20Zip%20Code.pdf'
+
+ZIPCODE_BREAKDOWN_PDF_FILENAME = "zipcode_breakdown_{timestamp}.pdf".format(timestamp=datetime.now().strftime("%y%m%dT%H%M"))
         
+
+pdffilepath = os.path.join(PDF_FILE_DIRECTORY,ZIPCODE_BREAKDOWN_PDF_FILENAME)
+  
+r = requests.get(ZIPCODE_BREAKDOWN_URL)
+with open(pdffilepath,'wb') as f: 
+  
+    # write the contents of the response (r.content) 
+    # to a new file in binary mode. 
+    f.write(r.content) 
+
+file = open(pdffilepath,'rb')
+fileReader = PyPDF2.PdfFileReader(file)
+pg0 = fileReader.getPage(0)
+txt = pg0.extractText()
+file.close()
+
+
+
+date = re.findall('Data through (?P<date>\d{1,2}/\d{2}/\d{4})',txt)[0]
+data = re.findall('(?P<zipcode>\d{5})\n(?P<count>\d+)',txt)
+
+df = pd.DataFrame.from_records(data).transpose()
+df.columns = df.iloc[0]; df=df.iloc[1:]; df.columns.name = ''
+df.index=[pd.Timestamp(date).date()]; df.index.name='Data through'
+
+zipcodedatafilepath = os.path.join(CSV_FILE_DIRECTORY,ZIPCODE_BREAKDOWN_CSV_FILENAME)
+
+files_present = glob.glob(zipcodedatafilepath)
+
+if files_present:
+    df.to_csv(zipcodedatafilepath,mode='a',header=False)
+else:
+    df.to_csv(zipcodedatafilepath)
+    
+
+
+
 
 
 # WORKING WITH CITY DATA IN PANDAS:
