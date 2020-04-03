@@ -97,8 +97,7 @@ file.close()
 
 txt = re.sub('\n','',txt)
 
-
-date = re.findall('Data through (?P<date>\d{1,2}/\d{2}/\d{4})',txt)[0]
+date = re.findall('Data through (?P<date>\d{1,2}/\d{1,2}/\d{4})',txt)[0]
 data = re.findall('\s+(?P<city>[A-Za-z ]+[a-z])\*?\s+(?P<count>\d+) (?P<percentage>[0-9.]+%)',txt)
 
 df = pd.DataFrame.from_records(data).transpose()
@@ -165,21 +164,34 @@ file.close()
 
 
 
-date = re.findall('Data through (?P<date>\d{1,2}/\d{2}/\d{4})',txt)[0]
-data = re.findall('(?P<zipcode>\d{5})\n(?P<count>\d+)',txt)
+date = re.findall('Data through (?P<date>\d{1,2}/\d{1,2}/\d{4})',txt)[0]
+#data = re.findall('(?P<zipcode>(\d{5}|Unknown*|TOTAL))\n(?P<count>\d+)',txt)
+data = re.findall('(\d{5}|Unknown\*|TOTAL)\n(?P<count>\d+)',txt)
+
 
 df = pd.DataFrame.from_records(data).transpose()
 df.columns = df.iloc[0]; df=df.iloc[1:]; df.columns.name = ''
+df['Date Retrieved']=date_retrieved
 df.index=[pd.Timestamp(date).date()]; df.index.name='Data through'
 
 zipcodedatafilepath = os.path.join(CSV_FILE_DIRECTORY,ZIPCODE_BREAKDOWN_CSV_FILENAME)
 
-files_present = glob.glob(zipcodedatafilepath)
+dfold = pd.read_csv(zipcodedatafilepath)
+dfold.index = dfold['Data through']
+dfold = dfold.drop(['Data through'],axis=1)
 
-if files_present:
-    df.to_csv(zipcodedatafilepath,mode='a',header=False)
-else:
-    df.to_csv(zipcodedatafilepath)
+catdf = pd.concat([dfold,df])
+catdf = catdf[catdf.columns.sort_values()]
+catdf = pd.concat([catdf[catdf.columns[0:-3]],catdf['Unknown*'],catdf['TOTAL'],catdf['Date Retrieved']],axis=1)
+
+catdf.to_csv(zipcodedatafilepath)
+# import pdb; pdb.set_trace()
+# files_present = glob.glob(zipcodedatafilepath)
+#
+# if files_present:
+#     df.to_csv(zipcodedatafilepath,mode='a',header=False)
+# else:
+#     df.to_csv(zipcodedatafilepath)
     
 
 
