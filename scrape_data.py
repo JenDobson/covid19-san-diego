@@ -97,7 +97,7 @@ def get_city_breakdowns():
 
     # Parse the city data
     date = re.findall('Data through (?P<date>\d{1,2}/\d{1,2}/\d{4})',txt)[0]
-    data = re.findall('\s+(?P<city>[A-Za-z ]+[a-z])\*?\s+(?P<count>\d+) (?P<percentage>[0-9.]+%)',txt)
+    data = re.findall('\s+(?P<city>[A-Za-z ]+[a-z])\*?\s+(?P<count>[,\d]+) (?P<percentage>[0-9.]+%)',txt)
 
     # Create dataframes
     df = pd.DataFrame.from_records(data).transpose()
@@ -115,7 +115,6 @@ def get_city_breakdowns():
     df_unincorporated = df_unincorporated.rename(columns={'Unincorporated':'Total'})
 
     df_unknown = df.loc[:,['Unknown']]
-
     df_total = df.loc[:,['Total']]
     df_total=df_total.rename(columns={'Total':'San Diego County'})
 
@@ -139,7 +138,7 @@ def get_zipcode_breakdowns():
     txt = extract_text_from_pdf_url(ZIPCODE_BREAKDOWN_URL,pdffilepath)
 
     date = re.findall('Data through (?P<date>\d{1,2}/\d{1,2}/\d{4})',txt)[0]
-    data = re.findall('(\d{5}|Unknown\*|TOTAL)\n(?P<count>\d+)',txt)
+    data = re.findall('(\d{5}|Unknown\*|TOTAL)\n(?P<count>[,\d]+)',txt)
 
 
     df = pd.DataFrame.from_records(data).transpose()
