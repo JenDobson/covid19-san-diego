@@ -138,11 +138,29 @@ def get_zipcode_breakdowns():
     txt = extract_text_from_pdf_url(ZIPCODE_BREAKDOWN_URL,pdffilepath)
 
     date = re.findall('Data through (?P<date>\d{1,2}/\d{1,2}/\d{4})',txt)[0]
-    data = re.findall('(\d{5}|Unknown\*|TOTAL)\n(?P<count>[,\d]+)',txt)
-
-
-    df = pd.DataFrame.from_records(data).transpose()
+    
+    format_is_fixed = 0
+    if not format_is_fixed:
+        zipregex = '(919[0-9]{2}|920[0-9]{2}|921[0-9]{2})([0-9]{1,2})'*93 
+        
+        unknownregex = '(Unknown\*\n)([0-9]{1,2})(919[0-9]{2}|920[0-9]{2}|921[0-9]{2})([0-9]{1,2})(TOTAL\n)([0-9]{4})(919[0-9]{2}|920[0-9]{2}|921[0-9]{2})([0-9]{1,2})' 
+        cases = re.findall(zipregex + unknownregex,txt)
+        
+        zipcodes = cases[0][::2]
+        counts = cases[0][1::2]
+        df = pd.DataFrame([zipcodes,counts])
+        
+        
+        
+    else:
+        data = re.findall('(\d{5}|Unknown\*|TOTAL)\n(?P<count>[,\d]+)',txt)
+        df = pd.DataFrame.from_records(data).transpose()
+        df['Unknown*\n']
+    
     df.columns = df.iloc[0]; df=df.iloc[1:]; df.columns.name = ''
+    
+    df = df.rename({'Unknown*\n':'Unknown*','TOTAL\n':'TOTAL'},axis=1) # REMOVE AFTER PDF FORMAT FIXED
+    
     df['Date Retrieved']=date_retrieved()
     df.index=[pd.Timestamp(date).date()]; df.index.name='Data through'
 
@@ -151,11 +169,9 @@ def get_zipcode_breakdowns():
     dfold = pd.read_csv(zipcodedatafilepath)
     dfold.index = dfold['Data through']
     dfold = dfold.drop(['Data through'],axis=1)
-
     catdf = pd.concat([dfold,df])
     catdf = catdf[catdf.columns.sort_values()]
     catdf = pd.concat([catdf[catdf.columns[0:-3]],catdf['Unknown*'],catdf['TOTAL'],catdf['Date Retrieved']],axis=1)
-
     catdf.to_csv(zipcodedatafilepath)
     # write_to_csv(df,zipcodedatafilepath)
 
