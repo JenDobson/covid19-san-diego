@@ -139,23 +139,24 @@ def get_zipcode_breakdowns():
 
     date = re.findall('Data through (?P<date>\d{1,2}/\d{1,2}/\d{4})',txt)[0]
     
-    format_is_fixed = 0
-    if not format_is_fixed:
-        zipregex = '(919[0-9]{2}|920[0-9]{2}|921[0-9]{2})([0-9]{1,2})'*93 
+    try:
         
-        unknownregex = '(Unknown\*\n)([0-9]{1,2})(919[0-9]{2}|920[0-9]{2}|921[0-9]{2})([0-9]{1,2})(TOTAL\n)([0-9]{4})(919[0-9]{2}|920[0-9]{2}|921[0-9]{2})([0-9]{1,2})' 
-        cases = re.findall(zipregex + unknownregex,txt)
+        zipregex = '(919[0-9]{2}|920[0-9]{2}|921[0-9]{2})'
+        zipcodes = re.findall(zipregex,txt)
+        zipcodes.extend(['Unknown*\n','TOTAL\n'])
+        txtcopy = txt
+        for k in range(0,len(zipcodes)):
+            txtcopy = txtcopy.replace(zipcodes[k],'ZIP{n:03}ZIP'.format(n=k))
+        maskregex = 'ZIP(?P<idx>[0-9]{3})ZIP(?P<cases>[0-9]+)'
+        res = re.findall(maskregex,txtcopy)
+        data=[]
+        for (idx,ncases) in res:
+            data.append([zipcodes[int(idx)],int(ncases)])
+        df = pd.DataFrame(data).transpose()
         
-        zipcodes = cases[0][::2]
-        counts = cases[0][1::2]
-        df = pd.DataFrame([zipcodes,counts])
-        
-        
-        
-    else:
+    except:
         data = re.findall('(\d{5}|Unknown\*|TOTAL)\n(?P<count>[,\d]+)',txt)
         df = pd.DataFrame.from_records(data).transpose()
-        df['Unknown*\n']
     
     df.columns = df.iloc[0]; df=df.iloc[1:]; df.columns.name = ''
     
@@ -173,6 +174,9 @@ def get_zipcode_breakdowns():
     catdf = catdf[catdf.columns.sort_values()]
     catdf = pd.concat([catdf[catdf.columns[0:-3]],catdf['Unknown*'],catdf['TOTAL'],catdf['Date Retrieved']],axis=1)
     catdf.to_csv(zipcodedatafilepath)
+    
+    
+    print('Zipcodes with no reporting:  {s}'.format(s=', '.join(catdf.columns[catdf.iloc[-1].isna()])))
     # write_to_csv(df,zipcodedatafilepath)
 
 
