@@ -139,24 +139,19 @@ def get_zipcode_breakdowns():
 
     date = re.findall('Data through (?P<date>\d{1,2}/\d{1,2}/\d{4})',txt)[0]
     
-    try:
         
-        zipregex = '(919[0-9]{2}|920[0-9]{2}|921[0-9]{2})'
-        zipcodes = re.findall(zipregex,txt)
-        zipcodes.extend(['Unknown*\n','TOTAL\n'])
-        txtcopy = txt
-        for k in range(0,len(zipcodes)):
-            txtcopy = txtcopy.replace(zipcodes[k],'ZIP{n:03}ZIP'.format(n=k))
-        maskregex = 'ZIP(?P<idx>[0-9]{3})ZIP(?P<cases>[0-9]+)'
-        res = re.findall(maskregex,txtcopy)
-        data=[]
-        for (idx,ncases) in res:
-            data.append([zipcodes[int(idx)],int(ncases)])
-        df = pd.DataFrame(data).transpose()
-        
-    except:
-        data = re.findall('(\d{5}|Unknown\*|TOTAL)\n(?P<count>[,\d]+)',txt)
-        df = pd.DataFrame.from_records(data).transpose()
+    zipregex = '(919[0-9]{2}|920[0-9]{2}|921[0-9]{2})'
+    zipcodes = re.findall(zipregex,txt)
+    zipcodes.extend(['Unknown*\n','TOTAL\n'])
+    txtcopy = txt
+    for k in range(0,len(zipcodes)):
+        txtcopy = txtcopy.replace(zipcodes[k],'ZIP{n:03}ZIP'.format(n=k))
+    maskregex = 'ZIP(?P<idx>[0-9]{3})ZIP\n?(?P<cases>[0-9]+)'
+    res = re.findall(maskregex,txtcopy)
+    data=[]
+    for (idx,ncases) in res:
+        data.append([zipcodes[int(idx)],int(ncases)])
+    df = pd.DataFrame(data).transpose()
     
     df.columns = df.iloc[0]; df=df.iloc[1:]; df.columns.name = ''
     
