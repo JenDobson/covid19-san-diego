@@ -114,7 +114,9 @@ def get_city_breakdowns():
     df_incorporated = df.reindex(columns=incorporated_columns)
     df_incorporated = df_incorporated.rename(columns={'Incorporated':'Total'})
 
-    unincorporated_columns = ['Bonita','Fallbrook','Lakeside','Ramona','Rancho Santa Fe','Spring Valley','Other','Unincorporated']
+    unincorporated_columns = ['Alpine','Bonita','Bonsall','Borrego Springs','Boulevard','Campo',
+                            'Descanso','Fallbrook','Jamul','Lakeside','Pauma Valley','Ramona',
+                            'Ranchita','Rancho Santa Fe','Spring Valley','Valley Center','Other','Unincorporated']
     df_unincorporated = df.reindex(columns=unincorporated_columns)
     df_unincorporated = df_unincorporated.rename(columns={'Unincorporated':'Total'})
 
