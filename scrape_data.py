@@ -147,11 +147,17 @@ def df_from_text(txt):
     
     #if text has a long string of numbers (i.e. no formatting), use one extraction method
     if re.search('\d{20}',txt):
-        data = data_from_unstructured_text(txt)
-    
+        cases = data_from_unstructured_text(txt)
+        rates = None
     #if text has formatting, use formatting to extract data
     else:
-        (data,rates) = data_from_zip_text_with_rates(txt)
+        (cases,rates) = data_from_zip_text_with_rates(txt)
+
+    df = data_to_df(cases,date)
+    return df
+
+'''data is list of (zipcode,number) CASES or RATES'''
+def data_to_df(data,date):
     
     df = pd.DataFrame(data).transpose()
     
@@ -176,6 +182,7 @@ def data_from_unstructured_text(txt):
     return data
     
 def data_from_zip_text_with_rates(txt):
+    txt = txt.replace(',','')
     pattern = '(Unknown.{0,4}|Total|[0-9]{5})\n(?P<count>[0-9]*,{0,1}[0-9]*)\n([0-9]+\.?[0-9]+|\*\*)'
     data = re.findall(pattern,txt,re.IGNORECASE)
     cases = [(x[0],x[1]) for x in data]
