@@ -137,44 +137,77 @@ def get_city_breakdowns():
     write_to_csv(df_final,citydatafilepath)
     
     
+def df_from_text(txt):
+    date = re.findall('Data through (?P<date>\d{1,2}/\d{1,2}/\d{4})',txt)[0]
+    
+        
+    #zipregex = '(919[0-9]{2}|920[0-9]{2}|921[0-9]{2})'
+    #zipcodes = re.findall(zipregex,txt)
+    #zipcodes.extend(['Unknown*\n','TOTAL\n','Unknown','Total','Total\n'])
+    
+    #if text has a long string of numbers (i.e. no formatting), use one extraction method
+    if re.search('\d{20}',txt):
+        data = data_from_unstructured_text(txt)
+    
+    #if text has formatting, use formatting to extract data
+    else:
+        (data,rates) = data_from_zip_text_with_rates(txt)
+    
+    df = pd.DataFrame(data).transpose()
+    
+    df.columns = df.iloc[0]; df=df.iloc[1:]; df.columns.name = ''
+
+    df = df.rename({'Unknown***':'Unknown','Unknown*\n':'Unknown','Unknown*':'Unknown','Unknown\n':'Unknown','TOTAL\n':'TOTAL','Total':'TOTAL','Total\n':'TOTAL'},axis=1) # REMOVE AFTER PDF FORMAT FIXED
+    
+    df['Date Retrieved']=date_retrieved()
+    df.index=[pd.Timestamp(date).date()]; df.index.name='Data through'
+    return df
+
+def data_from_unstructured_text(txt):
+    
+    headers = zipcodes.extend(['Unknown*\n','TOTAL\n','Unknown','Unknown*','Unknown\n','Total','Total\n'])
+    for k in range(0,len(headers)):
+        txt = txt.replace(headers[k],'ZIP{n:03}ZIP'.format(n=k))
+    maskregex = 'ZIP(?P<idx>[0-9]{3})ZIP\n?(?P<cases>[0-9]+)'
+    res = re.findall(maskregex,txt)
+    data=[]
+    for (idx,ncases) in res:
+        data.append([zipcodes[int(idx)],int(ncases)])
+    return data
+    
+def data_from_zip_text_with_rates(txt):
+    pattern = '(Unknown.{0,4}|Total|[0-9]{5})\n(?P<count>[0-9]*,{0,1}[0-9]*)\n([0-9]+\.?[0-9]+|\*\*)'
+    data = re.findall(pattern,txt,re.IGNORECASE)
+    cases = [(x[0],x[1]) for x in data]
+    rates = [(x[0],x[2]) for x in data]      
+    return cases,rates
     
 def get_zipcode_breakdowns():
+    
+    zipcodedatafilepath = os.path.join(CSV_FILE_DIRECTORY,ZIPCODE_BREAKDOWN_CSV_FILENAME)
+    zipcodes = get_zipcodes_from_csv(zipcodedatafilepath)
         
     pdffilepath = os.path.join(PDF_FILE_DIRECTORY,ZIPCODE_BREAKDOWN_PDF_FILENAME)
     save_pdf_from_url(ZIPCODE_BREAKDOWN_URL,pdffilepath)
     txt = extract_text_from_pdf(pdffilepath)
     
-    date = re.findall('Data through (?P<date>\d{1,2}/\d{1,2}/\d{4})',txt)[0]
+    df = df_from_text(txt)
     
-        
-    zipregex = '(919[0-9]{2}|920[0-9]{2}|921[0-9]{2})'
-    zipcodes = re.findall(zipregex,txt)
-    zipcodes.extend(['Unknown*\n','TOTAL\n','Unknown','Total'])
-    txtcopy = txt
-    for k in range(0,len(zipcodes)):
-        txtcopy = txtcopy.replace(zipcodes[k],'ZIP{n:03}ZIP'.format(n=k))
-    maskregex = 'ZIP(?P<idx>[0-9]{3})ZIP\n?(?P<cases>[0-9]+)'
-    res = re.findall(maskregex,txtcopy)
-    data=[]
-    for (idx,ncases) in res:
-        data.append([zipcodes[int(idx)],int(ncases)])
-    df = pd.DataFrame(data).transpose()
     
-    df.columns = df.iloc[0]; df=df.iloc[1:]; df.columns.name = ''
-
-    df = df.rename({'Unknown*\n':'Unknown','Unknown*':'Unknown','TOTAL\n':'TOTAL','Total':'TOTAL'},axis=1) # REMOVE AFTER PDF FORMAT FIXED
-    
-    df['Date Retrieved']=date_retrieved()
-    df.index=[pd.Timestamp(date).date()]; df.index.name='Data through'
-
-    zipcodedatafilepath = os.path.join(CSV_FILE_DIRECTORY,ZIPCODE_BREAKDOWN_CSV_FILENAME)
     dfold = pd.read_csv(zipcodedatafilepath)
     dfold.index = dfold['Data through']
     dfold = dfold.drop(['Data through'],axis=1)
-    catdf = pd.concat([dfold,df],join='inner')
+    
+    catdf = pd.concat([dfold,df],join='outer')
+    
     
     zipcodes_not_in_csv = df.columns[~df.columns.isin(dfold.columns)]
     unreported_zipcodes = dfold.columns[~dfold.columns.isin(df.columns)]
+    
+    columns = sorted(catdf.columns)
+    columns = columns[0:-3]+['Unknown','TOTAL','Date Retrieved']
+    catdf = catdf.reindex(columns,axis=1)
+    catdf = catdf.loc[:,~catdf.columns.duplicated()]
     
     catdf.to_csv(zipcodedatafilepath)
     
@@ -182,7 +215,9 @@ def get_zipcode_breakdowns():
     print('Zipcodes with no reporting:  {s}; Reported zipcodes not recorded: {s2}'.format(s=', '.join(unreported_zipcodes),s2=', '.join(zipcodes_not_in_csv)))
     # write_to_csv(df,zipcodedatafilepath)
 
-
+def get_zipcodes_from_csv(csvfile):
+    df = pd.read_csv(csvfile)
+    return df.filter(regex="\d{5}").columns.values
 
 # WORKING WITH CITY DATA IN PANDAS:
 # Get one city's data for example with: df_final.iloc[:, df_final.columns.get_level_values(1)=='Carlsbad']
