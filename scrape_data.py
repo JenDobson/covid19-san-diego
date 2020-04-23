@@ -154,7 +154,8 @@ def df_from_text(txt):
         (cases,rates) = data_from_zip_text_with_rates(txt)
 
     df = data_to_df(cases,date)
-    return df
+    rates_df = data_to_df(rates,date)
+    return (df,rates_df)
 
 '''data is list of (zipcode,number) CASES or RATES'''
 def data_to_df(data,date):
@@ -188,7 +189,36 @@ def data_from_zip_text_with_rates(txt):
     cases = [(x[0],x[1]) for x in data]
     rates = [(x[0],x[2]) for x in data]      
     return cases,rates
+
+
+def concat_dfs(df,filepath):
     
+    
+    
+    try:
+        dfold = pd.read_csv(filepath)
+        dfold.index = dfold['Data through']
+        dfold = dfold.drop(['Data through'],axis=1)
+    
+        catdf = pd.concat([dfold,df],join='outer')
+        
+        zipcodes_not_in_csv = df.columns[~df.columns.isin(dfold.columns)]
+        unreported_zipcodes = dfold.columns[~dfold.columns.isin(df.columns)]
+        
+        print('Zipcodes with no reporting:  {s}; Reported zipcodes not recorded: {s2}'.format(s=', '.join(unreported_zipcodes),s2=', '.join(zipcodes_not_in_csv)))
+    except:
+        catdf = df
+            
+    
+    
+    
+    columns = sorted(catdf.columns)
+    columns = columns[0:-3]+['Unknown','TOTAL','Date Retrieved']
+    catdf = catdf.reindex(columns,axis=1)
+    catdf = catdf.loc[:,~catdf.columns.duplicated()]
+    
+    return catdf
+        
 def get_zipcode_breakdowns():
     
     zipcodedatafilepath = os.path.join(CSV_FILE_DIRECTORY,ZIPCODE_BREAKDOWN_CSV_FILENAME)
@@ -198,28 +228,20 @@ def get_zipcode_breakdowns():
     save_pdf_from_url(ZIPCODE_BREAKDOWN_URL,pdffilepath)
     txt = extract_text_from_pdf(pdffilepath)
     
-    df = df_from_text(txt)
+    (cases_df,rates_df) = df_from_text(txt)
+    
+    cases_df = concat_dfs(cases_df,zipcodedatafilepath)
     
     
-    dfold = pd.read_csv(zipcodedatafilepath)
-    dfold.index = dfold['Data through']
-    dfold = dfold.drop(['Data through'],axis=1)
+    ratesdatafilepath = zipcodedatafilepath.replace('data','casesper100k')
+    rates_df = concat_dfs(rates_df,ratesdatafilepath)
     
-    catdf = pd.concat([dfold,df],join='outer')
+    import pdb; pdb.set_trace()
     
-    
-    zipcodes_not_in_csv = df.columns[~df.columns.isin(dfold.columns)]
-    unreported_zipcodes = dfold.columns[~dfold.columns.isin(df.columns)]
-    
-    columns = sorted(catdf.columns)
-    columns = columns[0:-3]+['Unknown','TOTAL','Date Retrieved']
-    catdf = catdf.reindex(columns,axis=1)
-    catdf = catdf.loc[:,~catdf.columns.duplicated()]
-    
-    catdf.to_csv(zipcodedatafilepath)
+    cases_df.to_csv(zipcodedatafilepath)
+    rates_df.to_csv(ratesdatafilepath)
     
     
-    print('Zipcodes with no reporting:  {s}; Reported zipcodes not recorded: {s2}'.format(s=', '.join(unreported_zipcodes),s2=', '.join(zipcodes_not_in_csv)))
     # write_to_csv(df,zipcodedatafilepath)
 
 def get_zipcodes_from_csv(csvfile):
