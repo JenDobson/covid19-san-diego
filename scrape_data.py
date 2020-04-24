@@ -236,7 +236,7 @@ def get_zipcode_breakdowns():
     ratesdatafilepath = zipcodedatafilepath.replace('data','casesper100k')
     rates_df = concat_dfs(rates_df,ratesdatafilepath)
     
-    import pdb; pdb.set_trace()
+
     
     cases_df.to_csv(zipcodedatafilepath)
     rates_df.to_csv(ratesdatafilepath)
