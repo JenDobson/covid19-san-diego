@@ -88,27 +88,51 @@ def get_daily_status():
     # Write to CSV
     countydatafilepath = os.path.join(CSV_FILE_DIRECTORY,DAILY_STATUS_CSV_FILENAME)
     write_to_csv(df_final,countydatafilepath)
-
+    
     
 def get_city_breakdowns():
 
     # Retrieve and write the city breakdown pdf
     pdffilepath = os.path.join(PDF_FILE_DIRECTORY,CITY_BREAKDOWN_PDF_FILENAME)
     
-    save_pdf_from_url(CITY_BREAKDOWN_URL,pdffilepath)
+    #save_pdf_from_url(CITY_BREAKDOWN_URL,pdffilepath)
+    pdffilepath = './pdfs/city_breakdown_200423T0601.pdf'
     txt = extract_text_from_pdf(pdffilepath)
     txt = re.sub('\n','',txt)
-
+    
     # Parse the city data
     date = re.findall('Data through (?P<date>\d{1,2}/\d{1,2}/\d{4})',txt)[0]
-    data = re.findall('\s+(?P<city>[A-Za-z ]+[a-z])\*?\s+(?P<count>[,\d]+) (?P<percentage>[0-9.]+%)',txt)
-
+    
+    #Format change on 4/21
+    if pd.Timestamp(date)>=pd.Timestamp('4/21/2020'):
+        data = re.findall('(?P<city>[A-Za-z ]+[a-z])\*{0,4}\s+(?P<count>[,\d]+) (?P<percentage>[0-9.]+%) (\d+.\d+|\*{3})?',txt)
+    else:
+        data = re.findall('\s+(?P<city>[A-Za-z ]+[a-z])\*{0,4}\s+(?P<count>[,\d]+) (?P<percentage>[0-9.]+%)',txt)
+    
+    # Remove improper use of % 
+    df = data_to_df([(x[0],x[1]) for x in data],date)
+    rates_df = data_to_df([(x[0],x[3]) for x in data],date)
+    
+    df_total = format_cities_df(df)
+    rates_total = format_cities_df(rates_df)
+    
     # Create dataframes
-    df = pd.DataFrame.from_records(data).transpose()
-    df.columns = df.iloc[0]; df=df.iloc[1:]; df.columns.name = ''
-    df.index=[pd.Timestamp(date).date(),'Percent of Total']; df.index.name=''
-    df = df.rename(columns={'of Overall Total Incorporated City':'Incorporated', 'Total San Diego County Residents':'Total'})
-    df = df.drop(['Percent of Total'])
+    #df = pd.DataFrame.from_records(data).transpose()
+    
+
+    
+
+    # Write to csv
+    citydatafilepath = os.path.join(CSV_FILE_DIRECTORY,CITY_BREAKDOWN_CSV_FILENAME)
+    write_to_csv(df_total,citydatafilepath)
+    
+    ratesdatafilepath = citydatafilepath.replace('data','casesper100k')
+    write_to_csv(rates_total,ratesdatafilepath)
+    
+def format_cities_df(df):
+    df.columns = df.columns.str.lstrip()
+    df.colunns = df.columns.str.rstrip()
+    df = df.rename(columns={'Incorporated City':'Incorporated', 'Total San Diego County Residents':'Total'})
 
     incorporated_columns = ['Carlsbad','Chula Vista','Coronado','Del Mar','El Cajon','Encinitas','Escondido','Imperial Beach','La Mesa','Lemon Grove','National City','Oceanside','Poway','San Diego','San Marcos','Santee','Solana Beach','Vista','Incorporated']
     df_incorporated = df.reindex(columns=incorporated_columns)
@@ -131,11 +155,7 @@ def get_city_breakdowns():
     df_final = df_final.reorder_levels(['City','Administration'],axis=1)
     df_final.index.name = 'Data through date'
     df_final['Date Retrieved']=date_retrieved()
-
-    # Write to csv
-    citydatafilepath = os.path.join(CSV_FILE_DIRECTORY,CITY_BREAKDOWN_CSV_FILENAME)
-    write_to_csv(df_final,citydatafilepath)
-    
+    return df_final
     
 def df_from_text(txt):
     date = re.findall('Data through (?P<date>\d{1,2}/\d{1,2}/\d{4})',txt)[0]
@@ -164,7 +184,7 @@ def data_to_df(data,date):
     
     df.columns = df.iloc[0]; df=df.iloc[1:]; df.columns.name = ''
 
-    df = df.rename({'Unknown***':'Unknown','Unknown*\n':'Unknown','Unknown*':'Unknown','Unknown\n':'Unknown','TOTAL\n':'TOTAL','Total':'TOTAL','Total\n':'TOTAL'},axis=1) # REMOVE AFTER PDF FORMAT FIXED
+    df = df.rename({'Unknown****':'Unknown','Unknown***':'Unknown','Unknown*\n':'Unknown','Unknown*':'Unknown','Unknown\n':'Unknown','TOTAL\n':'TOTAL','Total':'TOTAL','Total\n':'TOTAL'},axis=1) # REMOVE AFTER PDF FORMAT FIXED
     
     df['Date Retrieved']=date_retrieved()
     df.index=[pd.Timestamp(date).date()]; df.index.name='Data through'
