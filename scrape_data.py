@@ -175,7 +175,6 @@ def df_from_text(txt):
     else:
         (cases,rates) = data_from_zip_text_with_rates(txt)
         
-    import pdb; pdb.set_trace()
     df = data_to_df(cases,date)
     rates_df = data_to_df(rates,date)
     return (df,rates_df)
