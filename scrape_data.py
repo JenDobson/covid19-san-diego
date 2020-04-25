@@ -17,6 +17,9 @@ PDF_FILE_DIRECTORY = './pdfs'
 
 CITY_BREAKDOWN_CSV_FILENAME = 'sandiego_data_by_city.csv'
 CITY_BREAKDOWN_URL = 'https://www.sandiegocounty.gov/content/dam/sdc/hhsa/programs/phs/Epidemiology/COVID-19%20Daily%20Update_City%20of%20Residence.pdf'
+
+
+
 CITY_BREAKDOWN_PDF_FILENAME = "city_breakdown_{timestamp}.pdf".format(timestamp=datetime.now().strftime("%y%m%dT%H%M"))
 
 
@@ -95,8 +98,7 @@ def get_city_breakdowns():
     # Retrieve and write the city breakdown pdf
     pdffilepath = os.path.join(PDF_FILE_DIRECTORY,CITY_BREAKDOWN_PDF_FILENAME)
     
-    #save_pdf_from_url(CITY_BREAKDOWN_URL,pdffilepath)
-    pdffilepath = './pdfs/city_breakdown_200423T0601.pdf'
+    save_pdf_from_url(CITY_BREAKDOWN_URL,pdffilepath)
     txt = extract_text_from_pdf(pdffilepath)
     txt = re.sub('\n','',txt)
     
@@ -131,7 +133,7 @@ def get_city_breakdowns():
     
 def format_cities_df(df):
     df.columns = df.columns.str.lstrip()
-    df.colunns = df.columns.str.rstrip()
+    df.columns = df.columns.str.rstrip()
     df = df.rename(columns={'Incorporated City':'Incorporated', 'Total San Diego County Residents':'Total'})
 
     incorporated_columns = ['Carlsbad','Chula Vista','Coronado','Del Mar','El Cajon','Encinitas','Escondido','Imperial Beach','La Mesa','Lemon Grove','National City','Oceanside','Poway','San Diego','San Marcos','Santee','Solana Beach','Vista','Incorporated']
@@ -139,13 +141,13 @@ def format_cities_df(df):
     df_incorporated = df_incorporated.rename(columns={'Incorporated':'Total'})
 
     unincorporated_columns = ['Alpine','Bonita','Bonsall','Borrego Springs','Boulevard','Campo',
-                            'Descanso','Fallbrook','Jamul','Julian','Lakeside','Pala','Pauma Valley','Portrero','Ramona',
+                            'Descanso','Fallbrook','Jamul','Julian','Lakeside','Pala','Pauma Valley','Potrero','Ramona',
                             'Ranchita','Rancho Santa Fe','Spring Valley','Tecate','Valley Center','Other','Unincorporated']
     df_unincorporated = df.reindex(columns=unincorporated_columns)
     df_unincorporated = df_unincorporated.rename(columns={'Unincorporated':'Total'})
 
     df_unknown = df.loc[:,['Unknown']]
-    df_total = df.loc[:,['Total']]
+    df_total = df.filter(regex=("Total*"))
     df_total=df_total.rename(columns={'Total':'San Diego County'})
 
     # Concatenate the dataframes
