@@ -139,8 +139,8 @@ def format_cities_df(df):
     df_incorporated = df_incorporated.rename(columns={'Incorporated':'Total'})
 
     unincorporated_columns = ['Alpine','Bonita','Bonsall','Borrego Springs','Boulevard','Campo',
-                            'Descanso','Fallbrook','Jamul','Lakeside','Pauma Valley','Ramona',
-                            'Ranchita','Rancho Santa Fe','Spring Valley','Valley Center','Other','Unincorporated']
+                            'Descanso','Fallbrook','Jamul','Julian','Lakeside','Pala','Pauma Valley','Portrero','Ramona',
+                            'Ranchita','Rancho Santa Fe','Spring Valley','Tecate','Valley Center','Other','Unincorporated']
     df_unincorporated = df.reindex(columns=unincorporated_columns)
     df_unincorporated = df_unincorporated.rename(columns={'Unincorporated':'Total'})
 
@@ -172,7 +172,8 @@ def df_from_text(txt):
     #if text has formatting, use formatting to extract data
     else:
         (cases,rates) = data_from_zip_text_with_rates(txt)
-
+        
+    import pdb; pdb.set_trace()
     df = data_to_df(cases,date)
     rates_df = data_to_df(rates,date)
     return (df,rates_df)
@@ -204,7 +205,7 @@ def data_from_unstructured_text(txt):
     
 def data_from_zip_text_with_rates(txt):
     txt = txt.replace(',','')
-    pattern = '(Unknown.{0,4}|Total|[0-9]{5})\n(?P<count>[0-9]*,{0,1}[0-9]*)\n([0-9]+\.?[0-9]+|\*\*)'
+    pattern = '(Unknown.{0,4}|Total|[0-9]{5})\n(?P<count>[0-9]*,{0,1}[0-9]*)\n{0,1}([0-9]+\.?[0-9]+|\*{1,3})'
     data = re.findall(pattern,txt,re.IGNORECASE)
     cases = [(x[0],x[1]) for x in data]
     rates = [(x[0],x[2]) for x in data]      
