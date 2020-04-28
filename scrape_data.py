@@ -107,7 +107,7 @@ def get_city_breakdowns():
     
     #Format change on 4/21
     if pd.Timestamp(date)>=pd.Timestamp('4/21/2020'):
-        data = re.findall('(?P<city>[A-Za-z ]+[a-z])\*{0,4}\s+(?P<count>[,\d]+) (?P<percentage>[0-9.]+%) (\d+.\d+|\*{3})?',txt)
+        data = re.findall('(?P<city>[A-Za-z ]+[a-z])\*{0,4}\s+(?P<count>[,\d]+) (?P<percentage>[0-9.]+%)? (\d+.\d+|\*{3})?',txt)
     else:
         data = re.findall('\s+(?P<city>[A-Za-z ]+[a-z])\*{0,4}\s+(?P<count>[,\d]+) (?P<percentage>[0-9.]+%)',txt)
     
