@@ -193,7 +193,7 @@ def data_to_df(data,date):
     return df
 
 def data_from_unstructured_text(txt):
-    
+    zipcodes = [x[0] for x in re.findall('(?P<zip>(919|920|921)[0-9]{2})',txt)]
     headers = zipcodes.extend(['Unknown*\n','TOTAL\n','Unknown','Unknown*','Unknown\n','Total','Total\n'])
     for k in range(0,len(headers)):
         txt = txt.replace(headers[k],'ZIP{n:03}ZIP'.format(n=k))
@@ -273,3 +273,39 @@ def get_zipcodes_from_csv(csvfile):
 # WORKING WITH CITY DATA IN PANDAS:
 # Get one city's data for example with: df_final.iloc[:, df_final.columns.get_level_values(1)=='Carlsbad']
 # Get all incorporated cities:  df_final.iloc[:,df_final.columns.get_level_values(0)=='Incorporated']
+
+
+
+def use_prior_cases():
+    txt = re.sub(',','',txt)
+    txt = re.sub('Unknown\*+','Unknown',txt)
+    txt = re.sub('Unknown\n','Unknown\n',txt)
+    txt = re.sub('Total\n','TOTAL',txt)
+    prior_cases = pd.read_csv('csv/sandiego_data_by_zipcode.csv')
+    prior_rates = pd.read_csv('csv/sandiego_casesper100k_by_zipcode.csv')
+    prior_cases = prior_cases.iloc[-1]
+    prior_rates = prior_rates.iloc[-1]
+    zipcodes = prior_rates.index.drop(['Data through','Date Retrieved']).values
+    for k in range(0,len(zipcodes)):
+        txt = txt.replace(zipcodes[k],'ZIP{n:03}ZIP'.format(n=k))
+    maskregex = 'ZIP([0-9]{3})ZIP\n?([0-9]+)\n?([0-9]+\.[0-9]|\*{2})'
+    res = re.findall(maskregex,txt)
+    cases=[]
+    rates=[]
+    for (idx,ncases,nrates) in res:
+        cases.append([zipcodes[int(idx)],ncases])
+        rates.append([zipcodes[int(idx)],nrates])
+    cases_df = pd.DataFrame(cases)
+    cases_df.index=cases_df[0]
+    cases_df=cases_df.drop([0],axis=1)
+    cases_df = cases_df.rename({1:'Cases'},axis=1)
+    
+    rates_df = pd.DataFrame(rates)
+    rates_df.index=rates_df[0]
+    rates_df=rates_df.drop([0],axis=1)
+    rates_df = rates_df.rename({1:'Rates'},axis=1)
+    
+    return (cases_df,rates_df)
+    
+def fix_cases_and_rates(cases,rates,prior_cases,prior_rates)
+    
