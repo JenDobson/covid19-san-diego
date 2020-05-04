@@ -276,7 +276,7 @@ def get_zipcodes_from_csv(csvfile):
 
 
 
-def use_prior_cases():
+def use_prior_cases(txt):
     txt = re.sub(',','',txt)
     txt = re.sub('Unknown\*+','Unknown',txt)
     txt = re.sub('Unknown\n','Unknown\n',txt)
@@ -307,5 +307,24 @@ def use_prior_cases():
     
     return (cases_df,rates_df)
     
-def fix_cases_and_rates(cases,rates,prior_cases,prior_rates)
+def fix_cases_and_rates(combined_df,ratio_df):
+    combined_df = combined_df.replace('**',np.nan)
+    combined_df['Computed Ratio']=combined_df['Cases'].astype('float')/combined_df['Rates'].astype('float')
+    combined_df['Target Ratio'] = ratio_df['Ratio']
+    new_ratios = []
+    new_cases = []
+    new_rates = []
+    
+    for index, row in combined_df.iterrows():
+        cases = row['Cases']; rate = row['Rates']
+        ratio = float(cases)/float(rate); target_ratio = row['Target Ratio']
+        
+        while len(cases)>1 and not np.isnan(ratio) and (ratio>1.1*target_ratio or ratio<.9*target_ratio):
+            rate = cases[-1]+rate; cases = cases[0:-1]
+            ratio = float(cases)/float(rate);
+            
+        new_cases.append(cases); new_rates.append(rate);new_ratios.append(ratio)
+        
+    combined_df['Cases']=new_cases; combined_df['Rates']=new_rates;combined_df['Computed Ratio']=ratios
+    return combined_df
     
