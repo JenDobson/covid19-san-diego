@@ -276,55 +276,25 @@ def get_zipcodes_from_csv(csvfile):
 
 
 
-def use_prior_cases(txt):
+    
+def cases_and_rates_from_txt(txt):
     txt = re.sub(',','',txt)
     txt = re.sub('Unknown\*+','Unknown',txt)
     txt = re.sub('Unknown\n','Unknown\n',txt)
     txt = re.sub('Total\n','TOTAL',txt)
     prior_cases = pd.read_csv('csv/sandiego_data_by_zipcode.csv')
     prior_rates = pd.read_csv('csv/sandiego_casesper100k_by_zipcode.csv')
-    prior_cases = prior_cases.iloc[-1]
-    prior_rates = prior_rates.iloc[-1]
-    zipcodes = prior_rates.index.drop(['Data through','Date Retrieved']).values
+    prior_cases = prior_cases.iloc[-2]
+    prior_rates = prior_rates.iloc[-2]
+    prior_cases = prior_cases.drop(['Data through','Date Retrieved'],axis=0)
+    strlength = prior_cases.apply(lambda x: len(str(int(x))))
+    zipcodes = prior_cases.index.values
+
+    data = []
     for k in range(0,len(zipcodes)):
-        txt = txt.replace(zipcodes[k],'ZIP{n:03}ZIP'.format(n=k))
-    maskregex = 'ZIP([0-9]{3})ZIP\n?([0-9]+)\n?([0-9]+\.[0-9]|\*{2})'
-    res = re.findall(maskregex,txt)
-    cases=[]
-    rates=[]
-    for (idx,ncases,nrates) in res:
-        cases.append([zipcodes[int(idx)],ncases])
-        rates.append([zipcodes[int(idx)],nrates])
-    cases_df = pd.DataFrame(cases)
-    cases_df.index=cases_df[0]
-    cases_df=cases_df.drop([0],axis=1)
-    cases_df = cases_df.rename({1:'Cases'},axis=1)
-    
-    rates_df = pd.DataFrame(rates)
-    rates_df.index=rates_df[0]
-    rates_df=rates_df.drop([0],axis=1)
-    rates_df = rates_df.rename({1:'Rates'},axis=1)
-    
-    return (cases_df,rates_df)
-    
-def fix_cases_and_rates(combined_df,ratio_df):
-    combined_df = combined_df.replace('**',np.nan)
-    combined_df['Computed Ratio']=combined_df['Cases'].astype('float')/combined_df['Rates'].astype('float')
-    combined_df['Target Ratio'] = ratio_df['Ratio']
-    new_ratios = []
-    new_cases = []
-    new_rates = []
-    
-    for index, row in combined_df.iterrows():
-        cases = row['Cases']; rate = row['Rates']
-        ratio = float(cases)/float(rate); target_ratio = row['Target Ratio']
-        
-        while len(cases)>1 and not np.isnan(ratio) and (ratio>1.1*target_ratio or ratio<.9*target_ratio):
-            rate = cases[-1]+rate; cases = cases[0:-1]
-            ratio = float(cases)/float(rate);
-            
-        new_cases.append(cases); new_rates.append(rate);new_ratios.append(ratio)
-        
-    combined_df['Cases']=new_cases; combined_df['Rates']=new_rates;combined_df['Computed Ratio']=ratios
-    return combined_df
-    
+    	zip=zipcodes[k]
+    	casespattern='[0-9]'*strlength[k]
+    	tokens = re.search(rf"(?P<zip>{zip})\n?(?P<cases>{casespattern})\n?(?P<rate>[0-9]+\.[0-9]|\*\*)",txt,re.IGNORECASE)
+    	data.append(tokens.groupdict())
+
+    return data
