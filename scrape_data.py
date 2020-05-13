@@ -107,7 +107,7 @@ def get_city_breakdowns():
     
     #Format change on 4/21
     if pd.Timestamp(date)>=pd.Timestamp('4/21/2020'):
-        data = re.findall('(?P<city>[A-Za-z ]+[a-z])\*{0,4}\s+(?P<count>[,\d]+) (?P<percentage>[0-9.]+%)? (\d+.\d+|\*{3})?',txt)
+        data = re.findall('(?P<city>[A-Za-z ]+[a-z])\*{0,4}\s+(?P<count>[,\d]+)\s+(?P<percentage>[0-9.]+%)?\s+(\d+.\d+|\*{3})?',txt)
     else:
         data = re.findall('\s+(?P<city>[A-Za-z ]+[a-z])\*{0,4}\s+(?P<count>[,\d]+) (?P<percentage>[0-9.]+%)',txt)
     
@@ -146,7 +146,12 @@ def format_cities_df(df):
     df_unincorporated = df.reindex(columns=unincorporated_columns)
     df_unincorporated = df_unincorporated.rename(columns={'Unincorporated':'Total'})
 
-    df_unknown = df.loc[:,['Unknown']]
+    try:
+        df_unknown = df.loc[:,['Unknown']]
+    except:
+        df_unknown = pd.DataFrame
+        
+        
     df_total = df.filter(regex=("Total*"))
     df_total=df_total.rename(columns={'Total':'San Diego County'})
 
