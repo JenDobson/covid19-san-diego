@@ -8,6 +8,8 @@ import glob
 import PyPDF2
 import requests
 
+import pathlib
+
 
 DAILY_STATUS_URL = 'https://www.sandiegocounty.gov/content/sdc/hhsa/programs/phs/community_epidemiology/dc/2019-nCoV/status.html'
 DAILY_STATUS_CSV_FILENAME = 'sandiego_daily_status.csv'
@@ -107,37 +109,43 @@ def get_city_breakdowns():
     pdffilepath = os.path.join(PDF_FILE_DIRECTORY,CITY_BREAKDOWN_PDF_FILENAME)
     
     save_pdf_from_url(CITY_BREAKDOWN_URL,pdffilepath)
-    txt = extract_text_from_pdf(pdffilepath)
-    txt = re.sub('\n','',txt)
     
-    # Parse the city data
-    date = re.findall('Data through (?P<date>\d{1,2}/\d{1,2}/\d{4})',txt)[0]
+    casesfilepath = os.path.join(CSV_FILE_DIRECTORY,CITY_BREAKDOWN_CSV_FILENAME)
+    ratesfilepath = casesfilepath.replace('data','casesper100k')
+    parse_city_data(pdffilepath,casesfilepath,ratesfilepath)
     
-    #Format change on 4/21
-    if pd.Timestamp(date)>=pd.Timestamp('4/21/2020'):
-        data = re.findall('(?P<city>[A-Za-z ]+[a-z])\*{0,4}\s+(?P<count>[,\d]+)\s+(?P<percentage>[0-9.]+%)?\s+(\d+.\d+|\*{3})?',txt)
-    else:
-        data = re.findall('\s+(?P<city>[A-Za-z ]+[a-z])\*{0,4}\s+(?P<count>[,\d]+) (?P<percentage>[0-9.]+%)',txt)
-    
-    # Remove improper use of % 
-    df = data_to_df([(x[0],x[1]) for x in data],date)
-    rates_df = data_to_df([(x[0],x[3]) for x in data],date)
-    
-    df_total = format_cities_df(df)
-    rates_total = format_cities_df(rates_df)
-    
-    # Create dataframes
-    #df = pd.DataFrame.from_records(data).transpose()
-    
-
-    
-
-    # Write to csv
-    citydatafilepath = os.path.join(CSV_FILE_DIRECTORY,CITY_BREAKDOWN_CSV_FILENAME)
-    write_to_csv(df_total,citydatafilepath)
-    
-    ratesdatafilepath = citydatafilepath.replace('data','casesper100k')
-    write_to_csv(rates_total,ratesdatafilepath)
+        #
+    # txt = extract_text_from_pdf(pdffilepath)
+    # txt = re.sub('\n','',txt)
+    #
+    # # Parse the city data
+    # date = re.findall('Data through (?P<date>\d{1,2}/\d{1,2}/\d{4})',txt)[0]
+    #
+    # #Format change on 4/21
+    # if pd.Timestamp(date)>=pd.Timestamp('4/21/2020'):
+    #     data = re.findall('(?P<city>[A-Za-z ]+[a-z])\*{0,4}\s+(?P<count>[,\d]+)\s+(?P<percentage>[0-9.]+%)?\s+(\d+.\d+|\*{3})?',txt)
+    # else:
+    #     data = re.findall('\s+(?P<city>[A-Za-z ]+[a-z])\*{0,4}\s+(?P<count>[,\d]+) (?P<percentage>[0-9.]+%)',txt)
+    #
+    # # Remove improper use of %
+    # df = data_to_df([(x[0],x[1]) for x in data],date)
+    # rates_df = data_to_df([(x[0],x[3]) for x in data],date)
+    #
+    # df_total = format_cities_df(df)
+    # rates_total = format_cities_df(rates_df)
+    #
+    # # Create dataframes
+    # #df = pd.DataFrame.from_records(data).transpose()
+    #
+    #
+    #
+    #
+    # # Write to csv
+    # citydatafilepath = os.path.join(CSV_FILE_DIRECTORY,CITY_BREAKDOWN_CSV_FILENAME)
+    # write_to_csv(df_total,citydatafilepath)
+    #
+    # ratesdatafilepath = citydatafilepath.replace('data','casesper100k')
+    # write_to_csv(rates_total,ratesdatafilepath)
     
 def format_cities_df(df):
     df.columns = df.columns.str.lstrip()
@@ -312,3 +320,134 @@ def cases_and_rates_from_txt(txt):
     	data.append(tokens.groupdict())
 
     return data
+    
+    
+    
+
+def date_retrieved(pdffilepath):
+    fname = pathlib.Path(pdffilepath)
+    return pd.Timestamp(datetime.fromtimestamp(fname.stat().st_mtime)).ceil('s')
+
+def parse_city_data(pdffilepath,casesfilepath,ratesfilepath):
+    """Create and write DataFrame for city data
+    
+    PDFFILEPATH:  Path to pdf file of case data
+    CASESFILEPATH: Path to csv file of case data
+    RATESFILEPATH: Path to csv file of case per 100k data
+    
+    pdffilepath = 'pdfs/city_breakdown_200517T0601.pdf'
+    casesfilepath = 'csv/sandiego_data_by_city.csv'
+    ratesfilepath = 'csv/sandiego_casesper100k_by_city.csv' 
+    
+    import parser as p
+    p.parse_city_data(pdffilepath,casesfilepath,ratesfilepath)
+    """
+    
+    txt = extract_text_from_pdf(pdffilepath)
+    
+    # Parse the city data
+    date = re.findall('Data through (?P<date>\d{1,2}/\d{1,2}/\d{4})',txt)[0]
+    
+    #Format change on 4/21
+    if pd.Timestamp(date)>=pd.Timestamp('4/21/2020'):
+        data = re.findall('(?P<city>[A-Za-z ]+[a-z])\*{0,4}\s+(?P<count>[,\d]+)\s+(?P<percentage>[0-9.]+%)?\s+?(\d+.\d+|\*{3}|)?',txt)
+    else:
+        data = re.findall('\s+(?P<city>[A-Za-z ]+[a-z])\*{0,4}\s+(?P<count>[,\d]+) (?P<percentage>[0-9.]+%)',txt)
+    
+    unknown_tuple = re.search('(Unknown)\*{0,4}\s?(\d+)()()',txt,re.IGNORECASE).groups()
+    
+    df = pd.DataFrame(data).transpose()
+    df['Unknown'] = pd.Series(unknown_tuple)
+    
+    df = df.drop(index=[2])
+    df.columns = df.iloc[0]
+    df = df.drop(index=0)
+
+    df['Date Retrieved'] = [date_retrieved(pdffilepath),date_retrieved(pdffilepath)]
+    df.index.name='Data through' 
+    
+    cases_df = df.drop(index=3)
+    cases_df.index.name = 'Data through'
+    cases_df.index=[pd.Timestamp(date).date()]
+    
+    rates_df = df.drop(index=1)
+    rates_df.index.name = 'Data through'
+    rates_df.index=[pd.Timestamp(date).date()]
+    
+    
+    cases_df_total = format_cities_df(cases_df)
+    rates_df_total = format_cities_df(rates_df)
+    
+    # Write to csv
+    write_to_csv(cases_df_total,casesfilepath)
+    write_to_csv(rates_df_total,ratesfilepath)
+
+def parse_zipcode_data(pdffilepath,casesfilepath,ratesfilepath):
+    """Create and write DataFrame for zip code data
+    
+    PDFFILEPATH:  Path to pdf file of case data
+    CASESFILEPATH: Path to csv file of case data
+    RATESFILEPATH: Path to csv file of case per 100k data
+    
+    pdffilepath = 'pdfs/zipcode_breakdown_200517T0601.pdf'
+    casesfilepath = 'csv/sandiego_data_by_zipcode.csv'
+    ratesfilepath = 'csv/sandiego_casesper100k_by_zipcode.csv' 
+    
+    import parser as p
+    p.parse_zipcode_data(pdffilepath,casesfilepath,ratesfilepath)
+    """
+    
+
+    txt = extract_text_from_pdf(pdffilepath)
+    
+    txt = re.sub(',','',txt)
+    txt = re.sub('Unknown\*+','Unknown',txt)
+    txt = re.sub('Unknown\n','Unknown\n',txt)
+    txt = re.sub('Total\n','TOTAL',txt)
+    prior_cases = pd.read_csv(casesfilepath)
+    prior_rates = pd.read_csv(ratesfilepath)
+    prior_cases = prior_cases.iloc[-3]
+    prior_rates = prior_rates.iloc[-3]
+    prior_cases = prior_cases.drop(['Data through','Date Retrieved'],axis=0)
+    prior_cases = prior_cases.fillna(0)
+    strlength = prior_cases.apply(lambda x: len(str(int(x))))
+    zipcodes = prior_cases.index.values
+
+    zipcodes_in_text = re.findall('(919\d{2}|920\d{2}|921\d{2})',txt)
+
+    if len(zipcodes)-2 != len(zipcodes_in_text):
+        diff = set(zipcodes_in_text)-set(zipcodes)
+        print('Unreported zipcode: ' + ', '.join(diff))
+
+
+
+    datematch = re.search('Data through (?P<date>[0-9]{1,2}/[0-9]{1,2}/2020)',txt)
+    date = pd.Timestamp(datematch.groups()[0]).date()
+
+    data = []
+    for k in range(0,len(zipcodes)):
+        zipcode=zipcodes[k]
+        casespattern='[0-9]'*strlength[k]
+        tokens = re.search(rf"(?P<zipcode>{zipcode})\n?(?P<Cases>{casespattern})\n?(?P<Rates>[0-9]+\.[0-9]|\*\*)",txt,re.IGNORECASE)
+        data.append(tokens.groupdict())
+
+    datadf = pd.DataFrame(data)
+    datadf.index = datadf['zipcode']
+    datadf = datadf.drop(columns='zipcode').transpose()
+    datadf.index.name = 'Data through'
+    datadf['Date Retrieved'] = [date_retrieved(pdffilepath), date_retrieved(pdffilepath)]
+
+    cases_df = datadf.drop(index='Rates')
+    cases_df = cases_df.rename(index={'Cases':date})
+
+    rates_df = datadf.drop(index='Cases')
+    rates_df = rates_df.rename(index={'Rates':date})
+
+    cases_df = concat_dfs(cases_df,casesfilepath)
+
+    rates_df = concat_dfs(rates_df,ratesfilepath)
+
+
+
+    write_to_csv(cases_df,casesfilepath)
+    write_to_csv(rates_df,ratesfilepath)
