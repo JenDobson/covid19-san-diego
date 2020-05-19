@@ -27,6 +27,14 @@ ZIPCODE_BREAKDOWN_CSV_FILENAME = 'sandiego_data_by_zipcode.csv'
 ZIPCODE_BREAKDOWN_URL = 'https://www.sandiegocounty.gov/content/dam/sdc/hhsa/programs/phs/Epidemiology/COVID-19%20Summary%20of%20Cases%20by%20Zip%20Code.pdf'
 ZIPCODE_BREAKDOWN_PDF_FILENAME = "zipcode_breakdown_{timestamp}.pdf".format(timestamp=datetime.now().strftime("%y%m%dT%H%M"))
 
+def get_pdfs():
+    # Retrieve and write the city breakdown pdf
+    citypdffilepath = os.path.join(PDF_FILE_DIRECTORY,CITY_BREAKDOWN_PDF_FILENAME)
+    save_pdf_from_url(CITY_BREAKDOWN_URL,citypdffilepath)
+    
+    zippdffilepath = os.path.join(PDF_FILE_DIRECTORY,ZIPCODE_BREAKDOWN_PDF_FILENAME)
+    save_pdf_from_url(ZIPCODE_BREAKDOWN_URL,zippdffilepath)
+    
 
 def date_retrieved():
     return pd.Timestamp.now().round('s')
@@ -141,7 +149,7 @@ def format_cities_df(df):
     df_incorporated = df_incorporated.rename(columns={'Incorporated':'Total'})
 
     unincorporated_columns = ['Alpine','Bonita','Bonsall','Borrego Springs','Boulevard','Campo',
-                            'Descanso','Fallbrook','Jamul','Julian','Lakeside','Pala','Pauma Valley','Potrero','Ramona',
+                            'Descanso','Dulzura','Fallbrook','Jamul','Julian','Lakeside','Pala','Pauma Valley','Potrero','Ramona',
                             'Ranchita','Rancho Santa Fe','Spring Valley','Tecate','Valley Center','Other','Unincorporated']
     df_unincorporated = df.reindex(columns=unincorporated_columns)
     df_unincorporated = df_unincorporated.rename(columns={'Unincorporated':'Total'})
@@ -149,7 +157,7 @@ def format_cities_df(df):
     try:
         df_unknown = df.loc[:,['Unknown']]
     except:
-        df_unknown = pd.DataFrame
+        df_unknown = pd.DataFrame()
         
         
     df_total = df.filter(regex=("Total*"))
@@ -157,11 +165,12 @@ def format_cities_df(df):
 
     # Concatenate the dataframes
     pieces = {'Incorporated':df_incorporated,'Unincorporated':df_unincorporated,'Unknown':df_unknown,'Total':df_total}
+    
     df_final = pd.concat(pieces,axis=1)
     df_final.columns.names = ['Administration','City']
     df_final = df_final.reorder_levels(['City','Administration'],axis=1)
     df_final.index.name = 'Data through date'
-    df_final['Date Retrieved']=date_retrieved()
+    df_final['Date Retrieved']=df['Date Retrieved']
     return df_final
     
 def df_from_text(txt):
