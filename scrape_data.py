@@ -150,7 +150,7 @@ def format_cities_df(df):
 
     unincorporated_columns = ['Alpine','Bonita','Bonsall','Borrego Springs','Boulevard','Campo',
                             'Descanso','Dulzura','Fallbrook','Jamul','Julian','Lakeside','Pala','Pauma Valley','Potrero','Ramona',
-                            'Ranchita','Rancho Santa Fe','Spring Valley','Tecate','Valley Center','Other','Unincorporated']
+                            'Ranchita','Rancho Santa Fe','Santa Ysabel','Spring Valley','Tecate','Valley Center','Other','Unincorporated']
     df_unincorporated = df.reindex(columns=unincorporated_columns)
     df_unincorporated = df_unincorporated.rename(columns={'Unincorporated':'Total'})
 
