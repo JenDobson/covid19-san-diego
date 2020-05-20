@@ -162,7 +162,13 @@ def parse_zipcode_data(pdffilepath,casesfilepath,ratesfilepath):
         zipcode=zipcodes[k]
         casespattern='[0-9]'*strlength[k]
         tokens = re.search(rf"(?P<zipcode>{zipcode})\n?(?P<Cases>{casespattern})\n?(?P<Rates>[0-9]+\.[0-9]|\*\*)",txt,re.IGNORECASE)
-        data.append(tokens.groupdict())
+        if not tokens:
+            casespattern='[0-9]'*(strlength[k]+1)
+            tokens = re.search(rf"(?P<zipcode>{zipcode})\n?(?P<Cases>{casespattern})\n?(?P<Rates>[0-9]+\.[0-9]|\*\*)",txt,re.IGNORECASE)
+        try:
+            data.append(tokens.groupdict())
+        except:
+            print('No data for zipcode={}'.format(zipcode))
 
     datadf = pd.DataFrame(data)
     datadf.index = datadf['zipcode']
