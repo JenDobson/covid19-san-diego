@@ -94,6 +94,10 @@ def parse_city_data(pdffilepath,casesfilepath,ratesfilepath):
     else:
         data = re.findall('\s+(?P<city>[A-Za-z ]+[a-z])\*{0,4}\s+(?P<count>[,\d]+) (?P<percentage>[0-9.]+%)',txt)
     
+    # If unknown column not found, try again:
+    if len([x for x in data if re.match('Unknown.*',x[0])])==0:
+        data.append(re.search('(Unknown)\**\n?([0-9]+)()()',txt).groups())
+    
     # Remove improper use of %
     df = data_to_df([(x[0],x[1]) for x in data],date,date_retrieved(pdffilepath))
     rates_df = data_to_df([(x[0],x[3]) for x in data],date,date_retrieved(pdffilepath))
