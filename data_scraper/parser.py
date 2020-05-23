@@ -1,4 +1,4 @@
-from helpers import *
+from data_scraper.helpers import *
 import os
 
 DAILY_STATUS_URL = 'https://www.sandiegocounty.gov/content/sdc/hhsa/programs/phs/community_epidemiology/dc/2019-nCoV/status.html'
