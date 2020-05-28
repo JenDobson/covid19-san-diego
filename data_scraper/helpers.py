@@ -61,7 +61,7 @@ def parse_daily_status(daily_status_url,daily_status_csv_filepath):
     # Concatenate the dataframes
     pieces = {'Age':age_df,'Gender':gender_df,'Hospitalization':hospitalization_df,'Total':total_df}
     df_final = pd.concat(pieces,axis=1)
-    df_final = df_final.rename(index={1:date_updated}); df_final.index.name='Cases as of date'
+    df_final = df_final.rename(index={1:date_updated}); df_final.index.name='Data through'
     df_final['Date Retrieved']=pd.Timestamp.now().round('s')
 
     # Write to CSV
@@ -248,7 +248,7 @@ def format_cities_df(df):
     df_final = pd.concat(pieces,axis=1)
     df_final.columns.names = ['Administration','City']
     df_final = df_final.reorder_levels(['City','Administration'],axis=1)
-    df_final.index.name = 'Data through date'
+    df_final.index.name = 'Data through'
     df_final['Date Retrieved']=df['Date Retrieved']
     return df_final
     
