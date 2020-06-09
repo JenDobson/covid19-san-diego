@@ -8,7 +8,7 @@
 
 
 
-import data_scraper.parser as p
+import parser as p
 
 
 print('hello world')
