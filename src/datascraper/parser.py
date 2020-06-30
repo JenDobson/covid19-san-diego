@@ -5,8 +5,8 @@ DAILY_STATUS_URL = 'https://www.sandiegocounty.gov/content/sdc/hhsa/programs/phs
 DAILY_STATUS_CSV_FILENAME = 'sandiego_daily_status.csv'
 
 THIS_PATH = os.path.abspath(os.path.dirname(__file__))
-CSV_FILE_DIRECTORY = os.path.join(THIS_PATH,'../csv')
-PDF_FILE_DIRECTORY = os.path.join(THIS_PATH,'../pdfs')
+CSV_FILE_DIRECTORY = os.path.join(THIS_PATH,'../../csv')
+PDF_FILE_DIRECTORY = os.path.join(THIS_PATH,'../../pdfs')
 
 CITY_BREAKDOWN_CSV_FILENAME = 'sandiego_data_by_city.csv'
 CITY_BREAKDOWN_PER100K_CSV_FILENAME = 'sandiego_casesper100K_by_city.csv'
