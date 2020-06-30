@@ -45,13 +45,15 @@ from jdcv19.gis.gis import ZipCodeGIS
 from jdcv19.dataset.accessors import ZipAccessor, TSAccessor
 from jdcv19.figures.figures import create_map, create_timeseries
 
-from bokeh.plotting import figure
+from bokeh.plotting import figure, output_file
 from bokeh.io import show
 from bokeh.layouts import row, column
 
-from bokeh.resources import CDN
-from bokeh.embed import file_html
+#from bokeh.resources import CDN
+#from bokeh.embed import file_html
 
+output_file(os.path.join(PLOTS_FILE_DIRECTORY,'new_cases.html'), title='San Diego Covid-19 Plots')
+ 
 gis = ZipCodeGIS(sddata.columns)
 title = "San Diego County: Hover to Select Zip Code"
 mapfig = create_map(gis,df[['color','label']],title=title)
@@ -69,8 +71,6 @@ total_ts.line(pd.to_datetime(seven_day_average.index),seven_day_average['TOTAL']
 total_ts.toolbar.logo = None
 total_ts.toolbar_location = None
 
-
 show(column(row(mapfig,total_ts),tsfig))
 
-
-html = file_html(column(row(mapfig,total_ts),tsfig),CDN,os.path.join(PLOTS_FILE_DIRECTORY,'new_cases.html'))
+#html = file_html(column(row(mapfig,total_ts),tsfig),CDN,os.path.join(PLOTS_FILE_DIRECTORY,'new_cases.html'))
