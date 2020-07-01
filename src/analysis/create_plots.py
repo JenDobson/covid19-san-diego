@@ -1,10 +1,9 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 
 from numpy.polynomial import polynomial as P
-import matplotlib.pyplot as plt
+
 
 
 THIS_PATH = os.path.abspath(os.path.dirname(__file__))
