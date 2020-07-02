@@ -1,6 +1,18 @@
 import pandas as pd
 import numpy as np
 import os
+import datetime
+
+# Create Figures
+from jdcv19.figures.figures import create_map, create_timeseries, link_map_and_timeseries
+from jdcv19.gis.gis import ZipCodeGIS
+from jdcv19.dataset.accessors import ZipAccessor, TSAccessor
+from jdcv19.figures.figures import create_map, create_timeseries
+
+from bokeh.plotting import figure, output_file
+from bokeh.io import show
+from bokeh.layouts import row, column
+from bokeh.models import Div
 
 from numpy.polynomial import polynomial as P
 
@@ -38,15 +50,6 @@ df.index.name = 'zip'
 df['color'].to_frame()
 df['label']=df["color"].replace({v: k for k, v in colormap.items()})
 
-# Create Figures
-from jdcv19.figures.figures import create_map, create_timeseries, link_map_and_timeseries
-from jdcv19.gis.gis import ZipCodeGIS
-from jdcv19.dataset.accessors import ZipAccessor, TSAccessor
-from jdcv19.figures.figures import create_map, create_timeseries
-
-from bokeh.plotting import figure, output_file
-from bokeh.io import show
-from bokeh.layouts import row, column
 
 #from bokeh.resources import CDN
 #from bokeh.embed import file_html
@@ -70,6 +73,8 @@ total_ts.line(pd.to_datetime(seven_day_average.index),seven_day_average['TOTAL']
 total_ts.toolbar.logo = None
 total_ts.toolbar_location = None
 
-show(column(row(mapfig,total_ts),tsfig))
+text = "<b>Plots last updated {}</b>".format(datetime.datetime.now().strftime("%Y-%m-%d at %I:%M %p"))
+div = Div(text=text)
+show(column(row(mapfig,total_ts),tsfig,div))
 
 #html = file_html(column(row(mapfig,total_ts),tsfig),CDN,os.path.join(PLOTS_FILE_DIRECTORY,'new_cases.html'))
