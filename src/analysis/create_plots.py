@@ -31,9 +31,9 @@ sddiff = sddata.diff()
 seven_day_average = sddiff.rolling(7).mean()
 
 # Get linear fit to most recent 7 days
-days = np.arange(0,7)
+days = np.arange(0,14)
 fitfun = lambda cases: P.polyfit(days,cases,1)
-fit = sddiff.iloc[-7:,:].apply(fitfun)
+fit = sddiff.iloc[-14:,:].apply(fitfun)
 fit['fit_coef'] = ['c0','c1']
 fit = fit.set_index('fit_coef')
 
