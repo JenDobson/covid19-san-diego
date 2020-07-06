@@ -23,7 +23,11 @@ PLOTS_FILE_DIRECTORY = os.path.join(THIS_PATH,'../../plots')
 CSV_FILE_DIRECTORY = os.path.join(THIS_PATH,'../../csv')
 
 # Load the data and find differences
-sddata = pd.read_csv(os.path.join(CSV_FILE_DIRECTORY,'sandiego_data_by_zipcode.csv'),index_col=0)
+sddata = pd.read_csv(os.path.join(CSV_FILE_DIRECTORY,'sandiego_data_by_zipcode.csv'),
+                        index_col=0,
+                        dtype={'Data through':'str'},
+                        parse_dates=['Data through'])
+                         
 sddata = sddata.drop(columns='Date Retrieved').fillna(0)
 sddata.sort_values(sddata.index[-1],axis=1,ascending=False,inplace=True)
 sddiff = sddata.diff()
@@ -39,6 +43,7 @@ fit = fit.set_index('fit_coef')
 
 # Bin by rate of increase
 df = fit.transpose()
+df = df.drop(index=['Unknown','TOTAL'])
 bins = [-10,-.5,-.25,.25,.5,10]
 df['bin'] = pd.cut(df.c1,bins,labels=['decreasing fastest','decreasing','about the same','increasing','increasing fastest'])
 df[df.bin=='increasing fastest']
@@ -58,6 +63,7 @@ output_file(os.path.join(PLOTS_FILE_DIRECTORY,'new_cases.html'), title='San Dieg
  
 gis = ZipCodeGIS(sddata.columns)
 title = "San Diego County: Hover to Select Zip Code"
+df.loc[df['label'].isnull(),'label']='about the same'
 mapfig = create_map(gis,df[['color','label']],title=title)
 
 
