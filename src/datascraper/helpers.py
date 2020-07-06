@@ -33,6 +33,7 @@ def parse_daily_status(daily_status_url,daily_status_csv_filepath):
     
     # Grab and parse the data
     county_data = pd.read_html(daily_status_url)[0]
+    
     date_updated = re.findall('(?P<date>[A-Z][a-z]+\s+\d{1,2},\s+\d{4}).',county_data.iloc[0,0])[-1]
     date_updated = pd.Timestamp(datetime.strptime(date_updated,'%B %d, %Y'))
 
@@ -59,11 +60,11 @@ def parse_daily_status(daily_status_url,daily_status_csv_filepath):
     total_df=total_df.drop(columns=0).transpose()
 
     # Concatenate the dataframes
-    pieces = {'Age':age_df,'Gender':gender_df,'Hospitalization':hospitalization_df,'Total':total_df}
+    pieces = {'Age':age_df.iloc[0,:].to_frame().transpose(),'Gender':gender_df.iloc[0,:].to_frame().transpose(),'Hospitalization':hospitalization_df.iloc[0,:].to_frame().transpose(),'Total':total_df.iloc[0,:].to_frame().transpose()}
     df_final = pd.concat(pieces,axis=1)
     df_final = df_final.rename(index={1:date_updated}); df_final.index.name='Data through'
     df_final['Date Retrieved']=pd.Timestamp.now().round('s')
-
+    df_final.columns = df_final.columns.droplevel(0)
     # Write to CSV
     write_to_csv(df_final,daily_status_csv_filepath)
     
