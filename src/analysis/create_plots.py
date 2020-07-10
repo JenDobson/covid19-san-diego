@@ -77,6 +77,7 @@ total_ts.circle(pd.to_datetime(sddiff.index),sddiff['TOTAL'].values, size=5, col
 total_ts.line(pd.to_datetime(fourteen_day_average.index),fourteen_day_average['TOTAL'].values,legend_label="Fourteen Day Average")
 total_ts.toolbar.logo = None
 total_ts.toolbar_location = None
+total_ts.legend.location = 'top_left'
 
 text = "<b>Plots last updated {}</b>".format(datetime.datetime.now().strftime("%Y-%m-%d at %I:%M %p"))
 div = Div(text=text)
