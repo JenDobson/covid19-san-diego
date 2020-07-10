@@ -12,7 +12,7 @@ from jdcv19.figures.figures import create_map, create_timeseries
 from bokeh.plotting import figure, output_file
 from bokeh.io import show
 from bokeh.layouts import row, column
-from bokeh.models import Div
+from bokeh.models import Div, Range1d
 
 from numpy.polynomial import polynomial as P
 
@@ -32,7 +32,7 @@ sddata = sddata.drop(columns='Date Retrieved').fillna(0)
 sddata.sort_values(sddata.index[-1],axis=1,ascending=False,inplace=True)
 sddiff = sddata.diff()
 
-seven_day_average = sddiff.rolling(7).mean()
+fourteen_day_average = sddiff.rolling(14).mean()
 
 # Get linear fit to most recent 7 days
 days = np.arange(0,14)
@@ -66,16 +66,15 @@ title = "San Diego County: Hover to Select Zip Code"
 df.loc[df['label'].isnull(),'label']='about the same'
 mapfig = create_map(gis,df[['color','label']],title=title)
 
-
-tsfig = create_timeseries(seven_day_average.drop(columns=['Unknown','TOTAL']),title="New Cases Per Day by Selected Zip Code")
-(mapfig, tsfig) = link_map_and_timeseries(mapfig,tsfig,seven_day_average.ts.value_dict)
-
+tsfig = create_timeseries(sddiff.drop(columns=['Unknown','TOTAL']),title="New Cases Per Day by Selected Zip Code")
+(mapfig, tsfig) = link_map_and_timeseries(mapfig,tsfig,sddiff.ts.value_dict)
+tsfig.y_range=Range1d(-5, 50)
 
 total_ts = figure(height=530,width=400,x_axis_type='datetime',x_axis_label='Date',
                   y_axis_label='Reported New Cases Per Day',title='San Diego County: New Reported Cases Per Day')
 # add a circle renderer with a size, color, and alpha
 total_ts.circle(pd.to_datetime(sddiff.index),sddiff['TOTAL'].values, size=5, color="navy", alpha=0.5,legend_label="Reported New Cases")
-total_ts.line(pd.to_datetime(seven_day_average.index),seven_day_average['TOTAL'].values,legend_label="Seven Day Average")
+total_ts.line(pd.to_datetime(fourteen_day_average.index),fourteen_day_average['TOTAL'].values,legend_label="Fourteen Day Average")
 total_ts.toolbar.logo = None
 total_ts.toolbar_location = None
 
