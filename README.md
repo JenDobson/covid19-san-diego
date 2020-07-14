@@ -8,5 +8,7 @@ Please naviate to the repo's csv directory to find csv files for Daily Situation
 Data are retrieved from the website at approximately 6:00am each day and reflect updates posted by the county the previous afternoon.
 
 
-# Public Sites Using this Data
-* PowerBI Dashboard tracking Covid19 Status in San Diego[https://app.powerbi.com/view?r=eyJrIjoiMGM3YzY5NmQtNGM5Zi00ZGFiLTliZDAtNzJkYzk2MGFmZGFhIiwidCI6IjA1NzY5NmZiLTQ3MDctNGMxYi1iNjFhLTg0NWQ1YzU1MDFhNiIsImMiOjF9]
+# Public Sites Using Data from this Repository
+If you would like your site to be added to this list, please submit an issue requesting inclusion.
+* [PowerBI Dashboard tracking Covid19 Status in San Diego](https://app.powerbi.com/view?r=eyJrIjoiMGM3YzY5NmQtNGM5Zi00ZGFiLTliZDAtNzJkYzk2MGFmZGFhIiwidCI6IjA1NzY5NmZiLTQ3MDctNGMxYi1iNjFhLTg0NWQ1YzU1MDFhNiIsImMiOjF9) by Matt Hecht and Jake Prevost
+* [Covid19 in San Diego: Tracking Changes in the Daily Rate of Increase] (http://jendobson.com/2020/06/30/covid19-in-san-diego-county-tracking-changes-in-the-daily-rate-of-increase/) by yours truly
