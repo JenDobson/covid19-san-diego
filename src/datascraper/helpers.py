@@ -39,7 +39,7 @@ def parse_daily_status(daily_status_url,daily_status_csv_filepath):
 
     # Set up dataframe headers
     age_headers = ['0-9 years','10-19 years','20-29 years','30-39 years','40-49 years','50-59 years','60-69 years','70-79 years','80+ years','Age Unknown']
-    gender_headers = ['Female','Male','Unknown']
+    gender_headers = ['Woman','Man','Unknown']
     hospitalization_headers = ['Hospitalizations','Intensive Care','Deaths']
 
     # Get dataframes for each header category
